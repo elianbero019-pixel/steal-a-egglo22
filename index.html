@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Steal Egg</title>
+
+<style>
+* {
+    box-sizing: border-box;
+    user-select: none;
+}
+
+body {
+    margin: 0;
+    overflow: hidden;
+    font-family: Arial, sans-serif;
+    background: #10131c;
+    color: white;
+}
+
+#game {
+    width: 100vw;
+    height: 100vh;
+    position: relative;
+    overflow: hidden;
+    background:
+        radial-gradient(circle at center, #26344c 0%, #111827 65%);
+}
+
+/* UI */
+
+#topbar {
+    position: absolute;
+    top: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 12px;
+    z-index: 20;
+}
+
+.stat {
+    padding: 12px 18px;
+    border-radius: 14px;
+    background: rgba(15, 23, 42, .92);
+    border: 1px solid #334155;
+    box-shadow: 0 5px 20px #0008;
+    font-weight: bold;
+}
+
+#money {
+    color: #ffd43b;
+}
+
+#level {
+    color: #6ee7ff;
+}
+
+/* MAP */
+
+#map {
+    position: absolute;
+    width: 900px;
+    height: 600px;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.base {
+    position: absolute;
+    width: 180px;
+    height: 150px;
+    border-radius: 20px;
+    border: 3px solid;
+    text-align: center;
+    padding-top: 15px;
+    box-shadow: 0 10px 30px #0009;
+}
+
+.base h2 {
+    margin: 5px;
+}
+
+.base p {
+    margin: 5px;
+    font-size: 13px;
+}
+
+#playerBase {
+    left: 40px;
+    top: 220px;
+    background: #123c35;
+    border-color: #22c55e;
+}
+
+.enemy {
+    background: #351f42;
+    border-color: #a855f7;
+}
+
+#enemy1 {
+    right: 40px;
+    top: 80px;
+}
+
+#enemy2 {
+    right: 40px;
+    top: 350px;
+}
+
+#middle {
+    position: absolute;
+    left: 300px;
+    top: 210px;
+    width: 300px;
+    height: 180px;
+    border-radius: 30px;
+    background: #172033;
+    border: 2px solid #475569;
+    box-shadow: inset 0 0 50px #0008;
+}
+
+#middleTitle {
+    text-align: center;
+    color: #94a3b8;
+    margin-top: 12px;
+}
+
+/* EGGS */
+
+.egg {
+    position: absolute;
+    width: 45px;
+    height: 55px;
+    border-radius: 50% 50% 45% 45%;
+    cursor: pointer;
+    transition: transform .15s;
+    box-shadow: 0 5px 15px #0009;
+    z-index: 5;
+}
+
+.egg:hover {
+    transform: scale(1.18);
+}
+
+.common {
+    background: linear-gradient(#fff, #cbd5e1);
+}
+
+.rare {
+    background: linear-gradient(#60a5fa, #2563eb);
+    box-shadow: 0 0 18px #3b82f6;
+}
+
+.epic {
+    background: linear-gradient(#d946ef, #7e22ce);
+    box-shadow: 0 0 22px #c026d3;
+}
+
+.legendary {
+    background: linear-gradient(#fde047, #f97316);
+    box-shadow: 0 0 30px #f59e0b;
+}
+
+/* BUTTONS */
+
+#shop {
+    position: absolute;
+    right: 20px;
+    bottom: 20px;
+    width: 230px;
+    padding: 18px;
+    background: rgba(15, 23, 42, .95);
+    border: 1px solid #475569;
+    border-radius: 18px;
+    z-index: 20;
+}
+
+#shop h2 {
+    margin-top: 0;
+}
+
+button {
+    width: 100%;
+    border: none;
+    padding: 12px;
+    margin-top: 8px;
+    border-radius: 10px;
+    background: #2563eb;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #3b82f6;
+}
+
+button:active {
+    transform: scale(.98);
+}
+
+/* MESSAGE */
+
+#message {
+    position: absolute;
+    left: 50%;
+    bottom: 30px;
+    transform: translateX(-50%);
+    background: #020617e8;
+    padding: 13px 25px;
+    border-radius: 30px;
+    opacity: 0;
+    transition: opacity .3s;
+    z-index: 30;
+}
+
+/* MOBILE */
+
+@media(max-width:900px) {
+    #map {
+        transform: translate(-50%, -50%) scale(.7);
+    }
+
+    #shop {
+        transform: scale(.8);
+        transform-origin: bottom right;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div id="game">
+
+    <div id="topbar">
+        <div class="stat" id="money">💰 $100</div>
+        <div class="stat" id="level">⭐ Level 1</div>
+        <div class="stat" id="stolen">🥚 0 gestohlen</div>
+    </div>
+
+    <div id="map">
+
+        <div id="playerBase" class="base">
+            <h2>🏠 Deine Base</h2>
+            <p id="baseEggs">Eier: 0</p>
+            <p>Schütze deine Eier!</p>
+        </div>
+
+        <div id="enemy1" class="base enemy">
+            <h2>🏠 Base Alpha</h2>
+            <p>🤖 NPC</p>
+            <p>Stehlbare Eier</p>
+        </div>
+
+        <div id="enemy2" class="base enemy">
+            <h2>🏠 Base Beta</h2>
+            <p>🤖 NPC</p>
+            <p>Stehlbare Eier</p>
+        </div>
+
+        <div id="middle">
+            <div id="middleTitle">🥚 EGG ZONE 🥚</div>
+        </div>
+
+    </div>
+
+    <div id="shop">
+        <h2>🛒 Shop</h2>
+
+        <div>
+            Geschwindigkeit:
+            <b id="speedLevel">Level 1</b>
+        </div>
+
+        <button onclick="buySpeed()">
+            ⚡ Geschwindigkeit kaufen
+        </button>
+
+        <button onclick="buyMultiplier()">
+            💰 Geld-Multiplikator kaufen
+        </button>
+
+        <button onclick="resetGame()">
+            🔄 Spiel zurücksetzen
+        </button>
+    </div>
+
+    <div id="message"></div>
+
+</div>
+
+<script>
+
+/* =========================
+   GAME DATA
+========================= */
+
+let save = JSON.parse(localStorage.getItem("stealEggSave"));
+
+if (!save) {
+    save = {
+        money: 100,
+        stolen: 0,
+        level: 1,
+        speed: 1,
+        multiplier: 1,
+        baseEggs: 0
+    };
+}
+
+let eggs = [];
+
+/* =========================
+   ELEMENTS
+========================= */
+
+const moneyEl = document.getElementById("money");
+const levelEl = document.getElementById("level");
+const stolenEl = document.getElementById("stolen");
+const baseEggsEl = document.getElementById("baseEggs");
+const speedLevelEl = document.getElementById("speedLevel");
+
+/* =========================
+   SAVE
+========================= */
+
+function saveGame() {
+    localStorage.setItem(
+        "stealEggSave",
+        JSON.stringify(save)
+    );
+}
+
+/* =========================
+   UI
+========================= */
+
+function updateUI() {
+
+    moneyEl.textContent =
+        "💰 $" + Math.floor(save.money);
+
+    levelEl.textContent =
+        "⭐ Level " + save.level;
+
+    stolenEl.textContent =
+        "🥚 " + save.stolen + " gestohlen";
+
+    baseEggsEl.textContent =
+        "Eier: " + save.baseEggs;
+
+    speedLevelEl.textContent =
+        "Level " + save.speed;
+}
+
+updateUI();
+
+/* =========================
+   MESSAGE
+========================= */
+
+function message(text) {
+
+    const el = document.getElementById("message");
+
+    el.textContent = text;
+    el.style.opacity = "1";
+
+    setTimeout(() => {
+        el.style.opacity = "0";
+    }, 1800);
+}
+
+/* =========================
+   RANDOM RARITY
+========================= */
+
+function randomRarity() {
+
+    const number = Math.random() * 100;
+
+    if (number < 60)
+        return "common";
+
+    if (number < 85)
+        return "rare";
+
+    if (number < 97)
+        return "epic";
+
+    return "legendary";
+}
+
+/* =========================
+   EGG VALUES
+========================= */
+
+function eggValue(rarity) {
+
+    switch (rarity) {
+
+        case "common":
+            return 25;
+
+        case "rare":
+            return 100;
+
+        case "epic":
+            return 500;
+
+        case "legendary":
+            return 2500;
+    }
+
+    return 25;
+}
+
+/* =========================
+   CREATE EGG
+========================= */
+
+function spawnEgg() {
+
+    if (eggs.length >= 15)
+        return;
+
+    const egg = document.createElement("div");
+
+    const rarity = randomRarity();
+
+    egg.className = "egg " + rarity;
+
+    const x =
+        320 + Math.random() * 240;
+
+    const y =
+        260 + Math.random() * 100;
+
+    egg.style.left = x + "px";
+    egg.style.top = y + "px";
+
+    egg.title =
+        rarity.toUpperCase() +
+        " – $" +
+        eggValue(rarity);
+
+    document.getElementById("map")
+        .appendChild(egg);
+
+    const data = {
+        element: egg,
+        rarity: rarity,
+        stolen: false
+    };
+
+    eggs.push(data);
+
+    egg.onclick = function() {
+
+        if (data.stolen)
+            return;
+
+        stealEgg(data);
+    };
+}
+
+/* =========================
+   STEAL EGG
+========================= */
+
+function stealEgg(data) {
+
+    data.stolen = true;
+
+    const value =
+        eggValue(data.rarity);
+
+    const reward =
+        value * save.multiplier;
+
+    save.money += reward;
+    save.stolen++;
+
+    save.baseEggs++;
+
+    if (save.stolen % 10 === 0) {
+
+        save.level++;
+
+        message(
+            "🎉 Level Up! Level " +
+            save.level
+        );
+
+    } else {
+
+        message(
+            "🥚 " +
+            data.rarity.toUpperCase() +
+            " Egg gestohlen! +$" +
+            reward
+        );
+    }
+
+    data.element.remove();
+
+    eggs =
+        eggs.filter(e => e !== data);
+
+    saveGame();
+    updateUI();
+}
+
+/* =========================
+   SPAWN LOOP
+========================= */
+
+setInterval(() => {
+
+    spawnEgg();
+
+}, 1500);
+
+/* =========================
+   NPC EGGS
+========================= */
+
+setInterval(() => {
+
+    if (Math.random() < .5) {
+
+        const possible =
+            ["enemy1", "enemy2"];
+
+        const base =
+            possible[
+                Math.floor(
+                    Math.random() *
+                    possible.length
+                )
+            ];
+
+        message(
+            "👀 In " +
+            (base === "enemy1"
+                ? "Base Alpha"
+                : "Base Beta") +
+            " ist ein Ei aufgetaucht!"
+        );
+    }
+
+}, 7000);
+
+/* =========================
+   SPEED UPGRADE
+========================= */
+
+function buySpeed() {
+
+    const price =
+        save.speed * 250;
+
+    if (save.money < price) {
+
+        message(
+            "❌ Du brauchst $" +
+            price
+        );
+
+        return;
+    }
+
+    save.money -= price;
+    save.speed++;
+
+    message(
+        "⚡ Geschwindigkeit erhöht!"
+    );
+
+    saveGame();
+    updateUI();
+}
+
+/* =========================
+   MONEY MULTIPLIER
+========================= */
+
+function buyMultiplier() {
+
+    const price =
+        save.multiplier * 1000;
+
+    if (save.money < price) {
+
+        message(
+            "❌ Du brauchst $" +
+            price
+        );
+
+        return;
+    }
+
+    save.money -= price;
+
+    save.multiplier += .5;
+
+    save.multiplier =
+        Math.round(
+            save.multiplier * 10
+        ) / 10;
+
+    message(
+        "💰 Multiplikator: x" +
+        save.multiplier
+    );
+
+    saveGame();
+    updateUI();
+}
+
+/* =========================
+   RESET
+========================= */
+
+function resetGame() {
+
+    if (!confirm(
+        "Wirklich den Spielstand löschen?"
+    ))
+        return;
+
+    localStorage.removeItem(
+        "stealEggSave"
+    );
+
+    location.reload();
+}
+
+/* =========================
+   INITIAL EGGS
+========================= */
+
+for (let i = 0; i < 8; i++) {
+    spawnEgg();
+}
+
+/* =========================
+   AUTO SAVE
+========================= */
+
+setInterval(() => {
+    saveGame();
+}, 5000);
+
+</script>
+
+</body>
+</html>
